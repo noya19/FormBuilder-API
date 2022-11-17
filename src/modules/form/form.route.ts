@@ -7,7 +7,7 @@ import { $ref } from "./form.schema";
 async function formRoutes(server: FastifyInstance){
     server.post("/create", 
     {
-        preValidation: function(req, reply, done) {
+        preValidation: function(req, _reply, done) {
             const {fields} = req.body;
             fields.forEach( (cur) => {
                 if(cur.type === 'string' || cur.type === 'number'){
