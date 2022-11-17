@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String  @id @default(uuid())
+  email    String  @unique
+  name     String?
+  password String
+  forms    Form[]
+}
+
+model Form {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  author    User     @relation(fields: [userId], references: [id])
+  Field     Field[]
+}
+
+model Field {
+  id          String    @id @default(uuid())
+  field_id    Int
+  type        input
+  description String
+  Options     Options[]
+  form        Form      @relation(fields: [form_id], references: [id], onDelete: Cascade)
+  form_id     String
+}
+
+model Options {
+  id        String @id @default(uuid())
+  option_id Int // to insert the correct ordering of options
+  value     String
+  field     Field  @relation(fields: [field_id], references: [id], onDelete: Cascade)
+  field_id  String
+}
+
+enum input {
+  string
+  number
+  radio
+  multiselect
+}
