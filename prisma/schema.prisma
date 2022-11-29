@@ -30,17 +30,41 @@ model Field {
   field_id    Int
   type        input
   description String
-  Options     Options[]
-  form        Form      @relation(fields: [form_id], references: [id], onDelete: Cascade)
   form_id     String
+  form        Form      @relation(fields: [form_id], references: [id], onDelete: Cascade)
+  Options     Options[]
 }
 
 model Options {
   id        String @id @default(uuid())
-  option_id Int // to insert the correct ordering of options
+  option_id Int
   value     String
-  field     Field  @relation(fields: [field_id], references: [id], onDelete: Cascade)
   field_id  String
+  field     Field  @relation(fields: [field_id], references: [id], onDelete: Cascade)
+}
+
+model FormResponse {
+  id                 String               @id @default(uuid())
+  form_id            String
+  createdAt          DateTime             @default(now())
+  user_id            String
+  FormResponseFields FormResponseFields[]
+}
+
+model FormResponseFields {
+  id                  String                @id @default(uuid())
+  field_id            String
+  response_value      String?
+  formresponse_id     String
+  formResponse        FormResponse          @relation(fields: [formresponse_id], references: [id], onDelete: Cascade)
+  FormResponseOptions FormResponseOptions[]
+}
+
+model FormResponseOptions {
+  id                   String             @id @default(uuid())
+  opt_id               String
+  formresponsefield_id String
+  formResponseField_id FormResponseFields @relation(fields: [formresponsefield_id], references: [id])
 }
 
 enum input {

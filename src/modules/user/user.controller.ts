@@ -22,8 +22,7 @@ reply: FastifyReply)
 export async function loginHandler(
     request: FastifyRequest<{ Body: LoginUserInput }>, 
     reply: FastifyReply){
-    
-        const body = request.body;
+        
         const {email, password} = request.body;
     
         // try catch block yet to bet set.

@@ -21,7 +21,7 @@ openapi: {
   servers: [{
     url: 'http://localhost:3000'
   }],
-  tags: [ {name: "User", description: "User's Endpoints"}, {name: "Forms", description: "Form's Endpoints"}],
+  tags: [ {name: "User", description: "User's Endpoints"}, {name: "Forms", description: "Form's Endpoints"}, {name: "Submission", description: "Submission Endpoint"}],
   components: {
     securitySchemes: {
       bearerAuth: {

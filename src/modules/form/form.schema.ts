@@ -1,4 +1,4 @@
-import { object, string, z } from 'zod';
+import { number, object, string, z } from 'zod';
 import { buildJsonSchemas } from "fastify-zod";
 
 const paramSchema = z.object({
@@ -33,8 +33,25 @@ const responseFormSchema = z.object({
     name: z.string()
 })
 
+const formResponse_optionSchema = z.object({
+    opt_id: string()
+})
+
+const formRespone_fieldSchema = z.object({
+    field_id: string(),
+    response_value: string().optional(),
+    options: z.array(formResponse_optionSchema).optional(),
+})
+
+const submitFormSchema = z.object({
+    fields: z.array(formRespone_fieldSchema)
+})
+
+
+
 export type createFormInput = z.infer<typeof createFormSchema>
 export type InputParamType = z.infer<typeof paramSchema>
+export type SubmitFormInput = z.infer<typeof submitFormSchema>
 
 export const {schemas: formSchemas, $ref} = buildJsonSchemas({
     createFormSchema,
@@ -42,7 +59,8 @@ export const {schemas: formSchemas, $ref} = buildJsonSchemas({
     responseFormSchema,
     formInputSchema,
     paramSchema,
-    optionSchema
+    optionSchema,
+    submitFormSchema
 }, { $id: 'forms' })
 
 // Note: $id is important to differentiate different schemas, refere here https://stackoverflow.com/questions/73980097/zod-error-schema-with-id-schema-already-declared
