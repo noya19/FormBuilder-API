@@ -4,121 +4,122 @@ import {
   getFormTemplates,
   ResponseFormatter,
 } from "../../utils/formResponseFormatter";
+import { v4 as uuid } from "uuid";
+import { format, format_fields } from "../../utils/FormFormatter";
+
+interface form {
+  id: string;
+  name: string;
+  fields: Array<field>;
+}
+
+interface field{
+  id: string,
+  type: string,
+  description: string,
+  formId: string,
+  field_id: string,
+  options: Array<options>
+}
+
+interface options{
+  id: string,
+  option_id: string,
+  value: string,
+}
+
 
 export async function createForm(data: createFormInput) {
   const { fields, name, userId } = data;
 
-  const form = await prisma.form.create({
-    data: {
-      name,
-      userId: userId,
-    },
-  });
+  const form: Array<form> = await prisma.$queryRawUnsafe(`INSERT into public."Form" (id, name, "userId")  VALUES ('${uuid()}', '${name}', '${userId}') RETURNING id, name`);
 
-  fields.forEach(async (cur) => {
-    await prisma.field.create({
-      data: {
-        form_id: form.id,
-        field_id: cur.field_id,
-        type: cur.type,
-        description: cur.description,
-        Options: {
-          createMany: {
-            data: cur.options,
-          },
-        },
-      },
-    });
-  });
+  const formId = form[0].id; // since $queryRaw returns an Array.
 
-  return form;
+
+  for(let i=0; i<fields.length; i++){
+    const cur = fields[i];
+    const field: Array<field> =
+      await prisma.$queryRawUnsafe(`INSERT INTO public."Field" (id, type,description,form_id,field_id) VALUES ('${uuid()}', '${cur.type}' , '${cur.description}', '${formId}', ${cur.field_id}) RETURNING id`);
+    if(cur.options.length !== 0) {
+       for( const opt of cur.options){
+        await prisma.$queryRawUnsafe(`INSERT INTO public."Options" (id, option_id, value, field_id)
+        VALUES ('${uuid()}', '${opt.option_id}', '${opt.value}', '${field[0].id}')`);
+       }
+    }
+  } 
+
+  return form[0];
+
+
+  // fields.forEach(async (cur) => {
+
+  //   const field: Array<field> =
+  //     await prisma.$queryRawUnsafe(`INSERT INTO public."Field" (id, type,description,form_id,field_id) VALUES ('${uuid()}', '${cur.type}' , '${cur.description}', '${formId}', ${cur.field_id}) RETURNING id`);
+  //     if(cur.options.length !== 0) {
+  //     cur.options.forEach(async (opt) => {
+        
+  //     });
+  //   }
+  // });
 }
 
 export async function getAllForms(user_id: string) {
-  return await prisma.form.findMany({
-    where: {
-      userId: user_id,
-    },
-    select: {
-      id: true,
-      name: true,
-      userId: true,
-      createdAt: true,
-      updatedAt: true,
-      Field: {
-        orderBy: [
-          {
-            field_id: "asc",
-          },
-        ],
-        select: {
-          id: true,
-          field_id: true,
-          type: true,
-          description: true,
-          Options: {
-            orderBy: [
-              {
-                option_id: "asc",
-              },
-            ],
-            select: {
-              value: true,
-            },
-          },
-        },
-      },
-    },
-  });
+
+  const forms: Array<form> = await prisma.$queryRawUnsafe(`select * from "Form" fo where fo."userId" = '${user_id}';`);
+
+  const allForms: Array<form> = [];
+  for(let i=0; i<forms.length; i++){
+      const cur = forms[i];
+      const fields: Array<field> = await prisma.$queryRawUnsafe(`SELECT fe.id as field_ref_id, fe."type", fe.description , fe.form_id , fe.field_id as fiedd_pos, op.id as option_ref_id, op.option_id, op.value from "Field" fe  LEFT JOIN "Options" op on fe.id = op.field_id where fe.form_id = '${cur.id}' order by fe.field_id, op.option_id ;`);
+      const formattedForm = format(cur, fields);
+      allForms.push(formattedForm);
+  }
+
+  return allForms;
 }
 
-// Note: since we are using findMany, this function returns an array.
 export async function getFormbyId(user_id: string, form_id: string) {
-  return await prisma.form.findMany({
-    where: {
-      userId: user_id,
-      id: form_id,
-    },
-    select: {
-      id: true,
-      name: true,
-      userId: true,
-      createdAt: true,
-      updatedAt: true,
-      Field: {
-        orderBy: [
-          {
-            field_id: "asc",
-          },
-        ],
-        select: {
-          id: true,
-          field_id: true,
-          type: true,
-          description: true,
-          Options: {
-            orderBy: [
-              {
-                option_id: "asc",
-              },
-            ],
-            select: {
-              id: true,
-              option_id: true,
-              value: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  const form: Array<form> = await prisma.$queryRawUnsafe(`select * from "Form" where id = '${form_id}' and "userId" = '${user_id}';`);
+  const fields: Array<field> = await prisma.$queryRawUnsafe(`SELECT fe.id as field_ref_id, fe."type", fe.description , fe.form_id , fe.field_id as fiedd_pos, op.id as option_ref_id, op.option_id, op.value from "Field" fe  LEFT JOIN "Options" op on fe.id = op.field_id where fe.form_id = '${form[0].id}' order by fe.field_id, op.option_id;`);
+
+  const formattedForm = format(form[0], fields);
+  return formattedForm;
+}
+
+export async function deleteFormById(form_id: string) {
+  /*Note you have to delete cascade. Set property in the table to delete casecade.
+  Add Constraint to DB so that delete row is a cascade delete. ( This is done is the PgAdmin.)
+  
+  I used the following command to add constraint of cascade delete:-
+
+  ALTER TABLE public."Form" drop constraint "Form_userId_fkey", ADD CONSTRAINT "Form_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON DELETE CASCADE ON UPDATE CASCADE;*/
+  
+  return await prisma.$queryRawUnsafe(`delete from public."Form" where id = '${form_id}';`)
+
+}
+
+
+interface formResponseFieldInput{
+  field_id: string,
+  response_value: string,
+  pos: number,
+  options: Array<{ opt_id: string }>
+}
+
+// How Fields will look when fetched from a DB using a join.
+interface formResponseFieldFetch{ 
+  field_id: string,
+  response_value: string,
+  opt_id: string | null
 }
 
 export async function submitFormbyId(
   user_id: string,
   form_id: string,
-  fields: any
+  fields: Array<formResponseFieldInput>
 ) {
+  
   // check if the form exits
   const form = await getFormbyId(user_id, form_id);
   if (form.length === 0) {
@@ -126,132 +127,90 @@ export async function submitFormbyId(
   }
 
   // create a new response
-  const response = await prisma.formResponse.create({
-    data: {
-      form_id,
-      user_id,
-    },
-  });
+  const formResponse: Array<{ id: string }> = await prisma.$queryRawUnsafe(`INSERT INTO public."FormResponse" (id, form_id, user_id) VALUES ('${uuid()}', '${form_id}', '${user_id}') RETURNING id`);
 
-  // create the fields related to it
-  fields.forEach(async (cur: any) => {
-    await prisma.formResponseFields.create({
-      data: {
-        field_id: cur.field_id,
-        response_value: cur.response_value,
-        formresponse_id: response.id,
-        FormResponseOptions: {
-          createMany: {
-            data: cur.options,
-          },
-        },
-      },
-    });
-  });
 
-  return response;
+  const responseId = formResponse[0].id;
+
+
+  // add all the fields with responseid referencing from the formResponse table.
+  for (const cur of fields){
+    const field: Array<{ id: string }> = await prisma.$queryRawUnsafe(`INSERT INTO public."FormResponseFields"(
+      id, field_id, response_value, formresponse_id, field_order)
+      VALUES ('${uuid()}', '${cur.field_id}', '${cur.response_value}', '${responseId}', ${cur.pos}) RETURNING id ;`)
+
+    if(cur.options.length !== 0){
+      for( const opt of cur.options){
+        await prisma.$queryRawUnsafe(`INSERT INTO public."FormResponseOptions" (id, opt_id, formresponsefield_id) VALUES ('${uuid()}', '${opt.opt_id}', '${field[0].id}');`)
+      }
+    }
+  }
+  return formResponse[0];
 }
 
 export async function getSubmissionbyFormId(user_id: string, form_id: string) {
+  // get the form template.
   const formTemplate = await getFormbyId(user_id, form_id);
-  const formResponse = await prisma.formResponse.findMany({
-    where: {
-      form_id,
-      user_id,
-    },
-    select: {
-      id: true,
-      createdAt: true,
-      FormResponseFields: {
-        select: {
-          field_id: true,
-          response_value: true,
-          FormResponseOptions: {
-            select: {
-              opt_id: true,
-            },
-          },
-        },
-      },
-    },
-  });
 
-  // Format the Response for the Output.
-  const newResponse = await ResponseFormatter(formTemplate, formResponse);
+  // get the form Response
+  const formResponse: Array<{ id: string, createdAt: string}> = await prisma.$queryRawUnsafe(`select fr.id, fr."createdAt" from public."FormResponse" fr where fr.form_id = '${form_id}' and fr.user_id= '${user_id}';`);
 
-  // const field_template = formTemplate[0].Field;
-  // const fieldResponse_template = formResponse[0].FormResponseFields;
 
-  // // New Response Object
-  // const newResponse: any[] = [];
-  // field_template.forEach( (cur, i) => {
-  //     const tempObj: any = {}
-  //     tempObj.description = cur.description;
-  //     if( fieldResponse_template[i].response_value !== null && fieldResponse_template[i].FormResponseOptions.length == 0){
-  //         tempObj.response_value = fieldResponse_template[i].response_value;
-  //     }else if(fieldResponse_template[i].response_value === null && fieldResponse_template[i].FormResponseOptions.length != 0){
-  //         const newOptions: any[] = [];
-  //         const options = fieldResponse_template[i].FormResponseOptions;
-  //         options.forEach((ele) => {
-  //             const opt = cur.Options.find( (obj) => obj.id === ele.opt_id);
-  //             newOptions.push(opt?.value);
-  //         })
-  //         tempObj.options = newOptions;
-  //     }
-  //     newResponse.push(tempObj);
-  // })
-  // console.log(newResponse)
+  const cur = formResponse[0];
+  const fields: Array<formResponseFieldFetch> = await prisma.$queryRawUnsafe(`select frf.field_id, frf.response_value, fro.opt_id from "FormResponseFields" frf left join "FormResponseOptions" fro ON frf.id = fro.formresponsefield_id where frf.formresponse_id = '${cur.id}' order by frf.field_order;`);
+  
+  
+  // convert it to the desired Format
+  const FormResponseFields: Array<{ 
+      FormResponseFields: Array<
+      { 
+        field_id: string,
+        response_value: string | null,
+        FormResponseOptions: Array<{
+          opt_id: string
+        }>
+      }
+    >
+  }> = format_fields(fields); 
 
-  // return formResponse; //---- This is the basic response to be returned.
+
+  // merge the template and the response & Format the Response for the Output.
+  const newResponse = await ResponseFormatter([formTemplate], FormResponseFields);
+
+
   return newResponse;
 }
 
 export async function getAllSubmissionByUserId(user_id: string) {
-  // get all responses from a user : output array
-  const formResponses = await prisma.formResponse.findMany({
-    where: {
-      user_id,
-    },
-    select: {
-      id: true,
-      createdAt: true,
-      form_id: true,
-      FormResponseFields: {
-        select: {
-          field_id: true,
-          response_value: true,
-          FormResponseOptions: {
-            select: {
-              opt_id: true,
-            },
-          },
-        },
-      },
-    },
-  });
-  // console.log(formResponses);
+  // get all the Form Submissions made by a user
+  
+  const formResponse: Array<any> = await prisma.$queryRawUnsafe(`select fr.id, fr.form_id, fr."createdAt" from public."FormResponse" fr where 
+  fr.user_id= '${user_id}';`);
 
-  // get all form Template of the forma: output array
-  // ---extract all the formId's
-  const id_array: string[] = [];
-  formResponses.forEach((cur) => {
-    id_array.push(cur.form_id);
-  });
 
-  // ---get all the formTemplates.
-  const formTemplates = await getFormTemplates(id_array, user_id);
+  // Collect all the ResponseFields related to the above forms
+  let fieldResponses: any[] = [];
+  for(let i=0; i<formResponse.length; i++){
+    const cur = formResponse[i];
+    const fields: Array<any> = await prisma.$queryRawUnsafe(`select frf.field_id, frf.response_value, fro.opt_id from "FormResponseFields" frf left join "FormResponseOptions" fro ON frf.id = fro.formresponsefield_id where frf.formresponse_id = '${cur.id}' order by frf.field_order;`);
+    const FormResponseFields: any[] = format_fields(fields);
+    fieldResponses.push(FormResponseFields[0]);
+  }
 
-  // format all the responses
-  // console.log(formTemplates);
-  const responses = await ResponseFormatter(formTemplates, formResponses);
 
-  return responses;
-}
 
-export async function deleteFormById(form_id: string) {
-  return prisma.form.delete({
-    where: {
-      id: form_id,
-    },
-  });
+  // Get all the Form Templates.
+  const FormTemplates: any[] = [];
+  for(let i=0; i<formResponse.length; i++){
+    const cur_form = formResponse[i];
+    const formTemplate = await getFormbyId(user_id, cur_form.form_id);
+    FormTemplates.push(formTemplate);
+  }
+
+
+  // merge the template and the response
+  const newResponse = await ResponseFormatter(FormTemplates, fieldResponses);
+
+
+  return newResponse;
 }

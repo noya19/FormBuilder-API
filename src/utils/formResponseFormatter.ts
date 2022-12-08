@@ -14,14 +14,18 @@ export async function ResponseFormatter(
 ) {
   const allResponses = [];
   for (let i = 0; i < formTemplate.length; i++) {
-    const field_template: any[] = formTemplate[i].Field;
+    const field_template: any[] = formTemplate[i].Fields;
     const fieldResponse_template: any[] = formResponse[i].FormResponseFields;
+
+    // console.log(field_template);
+    // console.log(fieldResponse_template);
 
     const obj: any = {};
 
     obj.name = formTemplate[i].name;
     const newResponse: any[] = [];
     field_template.forEach((cur, i) => {
+      // console.log(cur);
       const tempObj: any = {};
       tempObj.description = cur.description;
       if (

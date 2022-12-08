@@ -13,7 +13,6 @@ import {
   InputParamType,
   SubmitFormInput,
 } from "./form.schema";
-import prisma from "../../utils/prisma";
 export async function create(
   request: FastifyRequest<{ Body: createFormInput }>,
   reply: FastifyReply
@@ -32,7 +31,7 @@ export async function create(
 export async function getforms(request: FastifyRequest, reply: FastifyReply) {
   try {
     const user_id = request.user.id;
-    const forms = await getAllForms(user_id);
+    const forms: any = await getAllForms(user_id);
     return reply.code(200).send({
       totalForms: forms.length,
       forms,

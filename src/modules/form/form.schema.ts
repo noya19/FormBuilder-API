@@ -41,6 +41,7 @@ const formRespone_fieldSchema = z.object({
   field_id: string(),
   response_value: string().optional(),
   options: z.array(formResponse_optionSchema).optional(),
+  pos: number()
 });
 
 const submitFormSchema = z.object({

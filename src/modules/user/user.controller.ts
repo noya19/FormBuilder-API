@@ -1,6 +1,7 @@
 // using type only imports the required functions and not the actual definitions or dependencies( if any), making it a faster import.
 
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { string } from "zod";
 import { server } from "../../app";
 import { CreateUserInput, LoginUserInput } from "./user.schema";
 import { create, findUserbyEmail, getAllUsers } from "./user.service";
@@ -12,6 +13,7 @@ export async function createUser(
   const body = request.body;
   try {
     const user = await create(body);
+    // console.log(user);
     return reply.code(201).send(user);
   } catch (e) {
     console.log(e);
