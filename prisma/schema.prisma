@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String  @id @default(uuid())
+  email    String  @unique
+  name     String?
+  password String
+  forms    Form[]
+}
+
+model Form {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  userId    String
+  author    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Field     Field[]
+}
+
+model Field {
+  id          String    @id @default(uuid())
+  type        input     @default(string)
+  description String
+  form_id     String
+  field_id    Int
+  form        Form      @relation(fields: [form_id], references: [id], onDelete: Cascade)
+  Options     Options[]
+}
+
+model Options {
+  id        String @id @default(uuid())
+  option_id Int
+  value     String
+  field_id  String
+  field     Field  @relation(fields: [field_id], references: [id], onDelete: Cascade)
+}
+
+model FormResponse {
+  id                 String               @id @default(uuid())
+  form_id            String
+  createdAt          DateTime             @default(now())
+  user_id            String
+  FormResponseFields FormResponseFields[]
+}
+
+model FormResponseFields {
+  id                  String                @id @default(uuid())
+  field_id            String
+  response_value      String?
+  formresponse_id     String
+  field_order         Int
+  formResponse        FormResponse          @relation(fields: [formresponse_id], references: [id], onDelete: Cascade)
+  FormResponseOptions FormResponseOptions[]
+}
+
+model FormResponseOptions {
+  id                   String             @id @default(uuid())
+  opt_id               String
+  formresponsefield_id String
+  formResponseField_id FormResponseFields @relation(fields: [formresponsefield_id], references: [id])
+}
+
+enum input {
+  string
+  number
+  radio
+  multiselect
+}

@@ -1,0 +1,32 @@
+{
+  "name": "fastify-formbuilder-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "tsnd --respawn --transpile-only --exit-child src/app.ts"
+  },
+  "author": "Ayon",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/jwt": "^6.3.2",
+    "@fastify/swagger": "^8.1.0",
+    "@fastify/swagger-ui": "^1.1.0",
+    "@prisma/client": "^4.5.0",
+    "@types/node": "^18.11.7",
+    "fastify": "^4.9.2",
+    "fastify-bcrypt": "^1.0.1",
+    "fastify-zod": "^1.2.0",
+    "prettier": "^2.8.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^4.8.4",
+    "uninstall": "^0.0.0",
+    "uuid": "^9.0.0",
+    "zod": "^3.19.1"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.0",
+    "prisma": "^4.5.0"
+  }
+}
