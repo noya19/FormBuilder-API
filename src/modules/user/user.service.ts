@@ -17,14 +17,7 @@ export async function create(data: CreateUserInput) {
   const user: Array<user> = await prisma.$queryRaw`INSERT INTO public."User" 
     (id, email, name, password) VALUES (${uuid()}, ${email}, ${name}, ${securePassword})
     RETURNING id, email, name`;
-  return user[0];
-
-  // const { password, ...rest } = data;
-  // const securePassword = await server.bcrypt.hash(password);
-  // const user = await prisma.user.create({
-  //   data: { ...rest, password: securePassword },
-  // });
-  // return user;
+    return user[0];
 }
 
 export async function findUserbyEmail(email: string) {
@@ -40,11 +33,4 @@ export async function findUserbyEmail(email: string) {
 
 export async function getAllUsers() {
   return await prisma.$queryRaw`SELECT id, email, name FROM public."User"`;
-  // return await prisma.user.findMany({
-  //   select: {
-  //     email: true,
-  //     name: true,
-  //     id: true,
-  //   },
-  // });
 }

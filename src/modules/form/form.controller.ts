@@ -34,7 +34,7 @@ export async function getforms(request: FastifyRequest, reply: FastifyReply) {
     const forms: any = await getAllForms(user_id);
     return reply.code(200).send({
       totalForms: forms.length,
-      forms,
+      forms: forms.map( (cur: any) => {  return cur.json_build_object }),
     });
   } catch (e) {
     console.log(e);
@@ -53,11 +53,14 @@ export async function getform(
     const { id } = request.params;
     const form = await getFormbyId(user_id, id);
 
+
     // If the form dosen't exist than throw an error.
     if (form.length === 0) {
       throw new Error("The Form dosen't exist");
     }
-    return reply.code(200).send(form);
+    // query returns to object in an array and the name of the object is json_build_object
+    return reply.code(200).send(form[0].json_build_object);
+
   } catch (e) {
     console.log(e);
     return reply.code(500).send(e);
@@ -95,7 +98,7 @@ export async function getSubmission(
   try {
     const user_id = request.user.id;
     const { id } = request.params;
-    const submission = await getSubmissionbyFormId(user_id, id);
+    const submission: any[] = await getSubmissionbyFormId(user_id, id);
     if (submission.length == 0) {
       return reply.code(200).send({ message: "No submission found" });
     }

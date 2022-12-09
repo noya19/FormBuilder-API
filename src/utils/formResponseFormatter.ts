@@ -25,22 +25,23 @@ export async function ResponseFormatter(
     obj.name = formTemplate[i].name;
     const newResponse: any[] = [];
     field_template.forEach((cur, i) => {
-      // console.log(cur);
+      console.log(cur);
       const tempObj: any = {};
       tempObj.description = cur.description;
       if (
-        fieldResponse_template[i].response_value !== null &&
-        fieldResponse_template[i].FormResponseOptions.length == 0
+        fieldResponse_template[i].response_value !== 'undefined' &&
+        fieldResponse_template[i].FormResponseOptions === null
       ) {
         tempObj.response_value = fieldResponse_template[i].response_value;
       } else if (
-        fieldResponse_template[i].response_value === null &&
-        fieldResponse_template[i].FormResponseOptions.length != 0
+        fieldResponse_template[i].response_value === 'undefined' &&
+        fieldResponse_template[i].FormResponseOptions !== null
       ) {
         const newOptions: any[] = [];
         const options: any[] = fieldResponse_template[i].FormResponseOptions;
+        console.log(options);
         options.forEach((ele) => {
-          const opt = cur.Options.find(
+          const opt = cur.options.find(
             (obj: { id: any }) => obj.id === ele.opt_id
           );
           newOptions.push(opt?.value);
