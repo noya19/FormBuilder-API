@@ -1,8 +1,8 @@
 import Fastify, { FastifyReply, FastifyRequest } from "fastify";
-import swagger from "@fastify/swagger";
 import swagger_ui from "@fastify/swagger-ui";
 import fastifyBcrypt from "fastify-bcrypt";
 import fastifyJwt from "@fastify/jwt";
+import fastifyCookie from "@fastify/cookie";
 
 import { swaggerObject } from "./utils/swagger";
 import userRoutes from "./modules/user/user.route";
@@ -28,6 +28,11 @@ declare module "@fastify/jwt" {
     };
   }
 }
+// register the fastify-cookie request
+server.register(fastifyCookie, {
+  secret: 'jdifsdlfusdfmoaosdid18348!02e',
+  hook: 'onRequest',
+})
 
 // register the jwt package and define the secret.
 server.register(fastifyJwt, {
