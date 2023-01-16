@@ -32,6 +32,7 @@ export async function getforms(request: FastifyRequest, reply: FastifyReply) {
   try {
     const user_id = request.user.id;
     const forms: any = await getAllForms(user_id);
+    console.log(request.cookies);
     return reply.code(200).send({
       totalForms: forms.length,
       forms: forms.map( (cur: any) => {  return cur.json_build_object }),

@@ -41,7 +41,15 @@ export async function loginHandler(
   // generate access toke
   if (match) {
     const { password, ...rest } = user;
-    return { accessToken: server.jwt.sign(rest, { expiresIn: "1h" }) };
+    const token = server.jwt.sign(rest, { expiresIn: "1h" });
+
+    // set cookie
+    reply.setCookie('token', "Hi this is my first token", {
+      maxAge: 10000,
+      httpOnly: true
+    })
+
+    return { accessToken: token };
   }
 
   // else send a response
@@ -50,7 +58,7 @@ export async function loginHandler(
   });
 }
 
-export async function getUsers(_request: FastifyRequest, reply: FastifyReply) {
+export async function getUsers(request: FastifyRequest, reply: FastifyReply) {
   try {
     const users = await getAllUsers();
     return reply.code(200).send(users);
