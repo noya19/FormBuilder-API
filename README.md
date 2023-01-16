@@ -1,2 +1,2 @@
-# FormBuilder-using-postgres
-A formBuilder app using fastify prisma and postgres raw querries.
+# FormBuilder-API
+A dynamic form Builder using backend framework fastify and Database PostgreSQL
